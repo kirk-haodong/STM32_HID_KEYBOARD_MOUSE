@@ -142,12 +142,11 @@ typedef enum
 __IO JOYState_TypeDef keydone = JOY_NONE;
 extern USBD_HandleTypeDef hUsbDeviceFS;
 JOYState_TypeDef Key_ReadIOPin(void);
-JOYState_TypeDef Key_ReadIOPin_continuous(void);
 static uint8_t *USBD_HID_GetPos (void);
 void Control(void);
 void keyboardControl(void);
 uint8_t keyScan(void);
-int getValue(void);
+void InfraredControl(void);
 
 
 

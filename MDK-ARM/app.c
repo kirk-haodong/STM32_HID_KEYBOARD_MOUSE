@@ -35,7 +35,10 @@
 #define SEND_KEYBOARD 2
 #define SEND_MOUSE 3
 #define SEND 4
-typedef enum 
+
+extern uint8_t  GetInfraredKey(void);
+
+typedef enum  //开发板按键引脚定义
 { 
   JOY_NONE = 0,
 	JOY_LEFT_CLICK = 1,
@@ -51,14 +54,14 @@ typedef enum
 	KEY_TWO_THREE = 11
 } JOYState_TypeDef
 ;
-typedef enum
+typedef enum  //键盘模式定义
 {
 	KEYBOARD = 0x01,
 	MOUSE = 0x10
 }MODE_Type
 ;
 
-typedef enum
+typedef enum  //键盘键值定义
 {
 	NONE = 0x00,
 	A = 0x04,
@@ -143,7 +146,7 @@ typedef enum
 }KEY_WORD
 ;
 
-typedef enum
+typedef enum  //键盘功能键键值定义
 {
 	LEFT_CONTROL = 0x01,
 	LEFT_SHIFT = 0x02,
@@ -156,6 +159,54 @@ typedef enum
 }KEY_FUNCTION
 ;
 
+typedef struct T9_Infrared  //红外遥控所需定义
+{
+  uint32_t  KEY_VALUE;   
+	uint16_t  TriTime[2];  
+	uint8_t   DataBit;
+	uint8_t   FrameStart;
+  uint8_t   KEY_Count;	
+	uint8_t   TriPolarity;
+	
+}T9_InfraredDev;
+
+typedef enum  //遥控器键值定义（不同遥控器做不同适配）
+{
+	Remote_Control_ONE						 = 	0x00,
+	Remote_Control_TWO 						 = 	0x10,
+	Remote_Control_THREE 					 = 	0x11,
+	Remote_Control_FOUR 					 = 	0x13,
+	Remote_Control_FIVE						 = 	0x14,
+	Remote_Control_SIX 						 = 	0x15,
+	Remote_Control_SEVEN 					 = 	0x17,
+	Remote_Control_EIGHT 					 = 	0x18,
+	Remote_Control_NINE 					 = 	0x19,
+	Remote_Control_ZERO 					 = 	0x1B,
+	Remote_Control_PAGE_UP 				 = 	0x42,
+	Remote_Control_PAGE_DOWN 			 = 	0x0F,
+	Remote_Control_F_ONE 					 = 	0x45,
+	Remote_Control_F_TWO 					 =	0x12,
+	Remote_Control_F_THREE 				 =	0x51,
+	Remote_Control_F_FOUR 				 =	0x5B,
+	Remote_Control_F_FIVE 				 =	0x44,
+	Remote_Control_F_SIX 					 =	0x50,
+	Remote_Control_F_SEVEN 				 =	0x43,
+	Remote_Control_F_EIGHT				 =	0x1A,
+	Remote_Control_F_NINE 				 =	0x04,
+	Remote_Control_F_TEN 					 =	0x59,
+	Remote_Control_F_ELEVEN				 =	0x57,
+	Remote_Control_F_TWELVE				 =	0x08,
+	Remote_Control_ARROW_UP 			 =	0x47,
+	Remote_Control_ARROW_DOWN			 =	0x4D,
+	Remote_Control_ARROW_LEFT 		 =	0x49,
+	Remote_Control_ARROW_RIGHT		 =	0x4B,
+	Remote_Control_ENTER					 =	0x4A,
+	Remote_Control_BACKSPACE			 =	0x40,
+	Remote_Control_SPACEBAR				 =	0x46,
+	Remote_Control_LEFT_GUI				 =	0x0B,
+	Remote_Control_ALT_PLUS_TAB	   =	0x1D,
+	Remote_Control_ALT_PLUS_F_FOUR =	0x1F 
+}Remote_Control_KeyNum;
 /**
   *按键修改键值，WORD存放除control、alt、shift、gui以外的按键，FUNCTION存放这四个功能键，WORD和FUNCTION必须有一个为NONE
 	*键值参考KEY_WORD,KEY_FUNCTION的定义
@@ -167,157 +218,33 @@ static uint8_t KEY_TWO_FUNCTION = NONE;
 static uint8_t KEY_THREE_WORD = NONE;
 static uint8_t KEY_THREE_FUNCTION = LEFT_ALT;
 static int tmp;
-
 __IO JOYState_TypeDef keyDone = JOY_NONE;
 extern USBD_HandleTypeDef hUsbDeviceFS;
-
+extern TIM_HandleTypeDef htim9;
 
 JOYState_TypeDef Key_ReadIOPin(void)
 {
-	if(keyDone == JOY_NONE)
-	{ 
-		if(!HAL_GPIO_ReadPin(JOY_A_KEY_Port,JOY_A_KEY_Pin))
-		{
-			keyDone = JOY_LEFT;
-			return JOY_NONE;
-		}   
-		else if(!HAL_GPIO_ReadPin(JOY_B_KEY_Port,JOY_B_KEY_Pin))
-		{
-			keyDone = JOY_UP;
-			return JOY_NONE;
-		}
-		else if(!HAL_GPIO_ReadPin(JOY_C_KEY_Port,JOY_C_KEY_Pin))
-		{	
-			keyDone = JOY_DOWN;
-			return JOY_NONE;
-		}
-		else if(!HAL_GPIO_ReadPin(JOY_D_KEY_Port,JOY_D_KEY_Pin))
-		{
-			keyDone = JOY_RIGHT;
-			return JOY_NONE;
-		}
-		else if((!HAL_GPIO_ReadPin(KEY3,KEY3_Pin ))&&(!HAL_GPIO_ReadPin(KEY1,KEY1_Pin )))
-		{
-			keyDone = KEY_ONE_THREE;
-			return JOY_NONE;
-		}		
-			else if((!HAL_GPIO_ReadPin(KEY2,KEY2_Pin ))&&(!HAL_GPIO_ReadPin(KEY1,KEY1_Pin )))
-		{
-			keyDone = KEY_ONE_TWO;
-			return JOY_NONE;
-		}		
-		else if((!HAL_GPIO_ReadPin(KEY2,KEY2_Pin ))&&(!HAL_GPIO_ReadPin(KEY3,KEY3_Pin )))
-		{
-			keyDone = KEY_TWO_THREE;
-			return JOY_NONE;
-		}		
-		else if(!HAL_GPIO_ReadPin(JOY_PRESS_Port,JOY_PRESS_Pin ))
-		{
-			keyDone = JOY_LEFT_CLICK;
-			return JOY_NONE;
-		}		
-		else if(!HAL_GPIO_ReadPin(KEY1,KEY1_Pin ))
-		{
-			keyDone = KEY_ONE;
-			return JOY_NONE;
-		}		
-		else if(!HAL_GPIO_ReadPin(KEY2,KEY2_Pin ))
-		{
-			keyDone = KEY_TWO;
-			return JOY_NONE;
-		}		
-		else if(!HAL_GPIO_ReadPin(KEY3,KEY3_Pin ))
-		{
-			keyDone = KEY_THREE;
-			return JOY_NONE;
-		}		
-
-	}
-	else if(keyDone != JOY_NONE)
-	{
-		if(HAL_GPIO_ReadPin(JOY_A_KEY_Port,JOY_A_KEY_Pin) && keyDone == JOY_LEFT)
-		{
-			keyDone = JOY_NONE;
-			return JOY_LEFT;
-		}
-		else if(HAL_GPIO_ReadPin(JOY_B_KEY_Port,JOY_B_KEY_Pin) && keyDone == JOY_UP)
-		{
-			keyDone = JOY_NONE;
-			return JOY_UP;
-		}
-		else if(HAL_GPIO_ReadPin(JOY_C_KEY_Port,JOY_C_KEY_Pin) && keyDone == JOY_DOWN)
-		{
-			keyDone = JOY_NONE;
-			return JOY_DOWN;
-		}
-		else if(HAL_GPIO_ReadPin(JOY_D_KEY_Port,JOY_D_KEY_Pin) && keyDone == JOY_RIGHT)
-		{
-			keyDone = JOY_NONE;
-			return JOY_RIGHT;
-		}
-		 else if(HAL_GPIO_ReadPin(KEY3,KEY3_Pin) && keyDone == KEY_ONE_THREE && HAL_GPIO_ReadPin(KEY1,KEY1_Pin))
-		{
-			keyDone = JOY_NONE;
-			return KEY_ONE_THREE;			
-		}
-		else if(HAL_GPIO_ReadPin(KEY1,KEY1_Pin) && keyDone == KEY_ONE_TWO && HAL_GPIO_ReadPin(KEY2,KEY2_Pin))
-		{
-			keyDone = JOY_NONE;
-			return KEY_ONE_TWO;			
-		}
-		else if(HAL_GPIO_ReadPin(KEY2,KEY2_Pin) && keyDone == KEY_TWO_THREE && HAL_GPIO_ReadPin(KEY3,KEY3_Pin))
-		{
-			keyDone = JOY_NONE;
-			return KEY_TWO_THREE;			
-		}
-		else if(HAL_GPIO_ReadPin(JOY_PRESS_Port ,JOY_PRESS_Pin) && keyDone == JOY_LEFT_CLICK)
-		{
-			keyDone = JOY_NONE;
-			return JOY_LEFT_CLICK;			
-		}
-		else if(HAL_GPIO_ReadPin(KEY1,KEY1_Pin) && keyDone == KEY_ONE)
-		{
-			keyDone = JOY_NONE;
-			return KEY_ONE;			
-		}
-		else if(HAL_GPIO_ReadPin(KEY2,KEY2_Pin) && keyDone == KEY_TWO)
-		{
-			keyDone = JOY_NONE;
-			return KEY_TWO;			
-		}
-		else if(HAL_GPIO_ReadPin(KEY3,KEY3_Pin) && keyDone == KEY_THREE)
-		{
-			keyDone = JOY_NONE;
-			return KEY_THREE;			
-		}
-	}
-	return JOY_NONE;
-}
-
-JOYState_TypeDef Key_ReadIOPin_continuous(void)
-{
-	
-	if(!HAL_GPIO_ReadPin(JOY_C_KEY_Port,JOY_C_KEY_Pin))
+	if(!HAL_GPIO_ReadPin( JOY_C_KEY_Port,JOY_C_KEY_Pin ))
 		return JOY_LEFT;
-	else if(!HAL_GPIO_ReadPin(JOY_A_KEY_Port,JOY_A_KEY_Pin))
+	else if(!HAL_GPIO_ReadPin( JOY_A_KEY_Port,JOY_A_KEY_Pin ))
 		return JOY_UP;
-	else if(!HAL_GPIO_ReadPin(JOY_D_KEY_Port,JOY_D_KEY_Pin))
+	else if(!HAL_GPIO_ReadPin( JOY_D_KEY_Port,JOY_D_KEY_Pin ))
 		return JOY_DOWN;
-	else if(!HAL_GPIO_ReadPin(JOY_B_KEY_Port,JOY_B_KEY_Pin))
+	else if(!HAL_GPIO_ReadPin( JOY_B_KEY_Port,JOY_B_KEY_Pin ))
 		return JOY_RIGHT;
-	else if((!HAL_GPIO_ReadPin(KEY3 ,KEY3_Pin )) && (!HAL_GPIO_ReadPin(KEY1 ,KEY1_Pin )))
+	else if((!HAL_GPIO_ReadPin( KEY3 ,KEY3_Pin )) && (!HAL_GPIO_ReadPin(KEY1 ,KEY1_Pin )))
 		return KEY_ONE_THREE;
-	else if((!HAL_GPIO_ReadPin(KEY2 ,KEY2_Pin )) && (!HAL_GPIO_ReadPin(KEY1 ,KEY1_Pin )))
+	else if((!HAL_GPIO_ReadPin( KEY2 ,KEY2_Pin )) && (!HAL_GPIO_ReadPin(KEY1 ,KEY1_Pin )))
 		return KEY_ONE_TWO;
-	else if((!HAL_GPIO_ReadPin(KEY3 ,KEY3_Pin )) && (!HAL_GPIO_ReadPin(KEY2 ,KEY2_Pin )))
+	else if((!HAL_GPIO_ReadPin( KEY3 ,KEY3_Pin )) && (!HAL_GPIO_ReadPin(KEY2 ,KEY2_Pin )))
 		return KEY_TWO_THREE;
-	else if(!HAL_GPIO_ReadPin(JOY_PRESS_Port ,JOY_PRESS_Pin ))
+	else if(!HAL_GPIO_ReadPin( JOY_PRESS_Port ,JOY_PRESS_Pin ))
 		return JOY_LEFT_CLICK;
-	else if(!HAL_GPIO_ReadPin(KEY1 ,KEY1_Pin ))
+	else if(!HAL_GPIO_ReadPin( KEY1 ,KEY1_Pin ))
 		return KEY_ONE;
-	else if(!HAL_GPIO_ReadPin(KEY2 ,KEY2_Pin ))
+	else if(!HAL_GPIO_ReadPin( KEY2 ,KEY2_Pin ))
 		return KEY_TWO;
-	else if(!HAL_GPIO_ReadPin(KEY3 ,KEY3_Pin ))
+	else if(!HAL_GPIO_ReadPin( KEY3 ,KEY3_Pin ))
 		return KEY_THREE;
 	return JOY_NONE;
 }
@@ -325,9 +252,9 @@ JOYState_TypeDef Key_ReadIOPin_continuous(void)
 static uint8_t *USBD_HID_GetPos (void)
 {
   int8_t  MODE=0 , x = 0,y = 0 ,z = 0 , k = 0;
-  static uint8_t HID_Buffer [9]={0,0,0,0,0,0,0,0,0};
+  static uint8_t HID_Buffer [9]={0x01,0,0,0,0,0,0,0,0};
   
-  switch (Key_ReadIOPin_continuous())//01键盘10鼠标
+  switch (Key_ReadIOPin())//01键盘10鼠标
   {
   case JOY_LEFT:
 		MODE = MOUSE;
@@ -377,7 +304,6 @@ static uint8_t *USBD_HID_GetPos (void)
 		x = KEY_ONE_FUNCTION + KEY_TWO_FUNCTION ;
 		z = KEY_ONE_WORD;
 		k = KEY_TWO_WORD;
-		
 		break;
 	
 	case KEY_ONE_THREE:
@@ -395,36 +321,194 @@ static uint8_t *USBD_HID_GetPos (void)
 		break;
 		
 	case JOY_NONE:
+		MODE = KEYBOARD;
+		break;
+	
+	default:	
+		MODE = KEYBOARD;
 		break;
 	
   }
-	
 	HID_Buffer[0] = MODE;
   HID_Buffer[1] = x;
   HID_Buffer[2] = y;
   HID_Buffer[3] = z;
   HID_Buffer[4] = k;
-  
+	
   return HID_Buffer;
 }
 
 void Control(void)
 {
-  
   uint8_t *buf;
-
   buf = USBD_HID_GetPos();
   if((buf[1] !=0) ||(buf[2] != 0) ||(buf[3] != 0) ||(buf[4] != 0) )
   {
-    USBD_HID_SendReport (&hUsbDeviceFS, 
-                         buf,
-                         KeyMessageSize);
+    USBD_HID_SendReport (&hUsbDeviceFS , buf , KeyMessageSize);
 		tmp = SEND;
   } 
 	else tmp = LOOSE;
 }
-
-int getValue(void)
+static uint8_t *Package(uint32_t a)  //红外遥控打包
 {
-	return tmp;
+	int8_t  MODE=0 , x = 0,y = 0 ,z = 0 , k = 0;
+	static uint8_t Hid_Buffer [9]={0,0,0,0,0,0,0,0,0};
+	switch(a)
+	{
+		case Remote_Control_ONE : 
+							 z = KEYBOARD_ONE;
+							 MODE = KEYBOARD;
+						   break;
+		case Remote_Control_TWO : 
+							 z = KEYBOARD_TWO;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_THREE : 
+							 z = KEYBOARD_THREE;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_FOUR : 
+							 z = KEYBOARD_FOUR;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_FIVE : 
+							 z = KEYBOARD_FIVE;
+							 MODE = KEYBOARD;
+							break;		
+		case Remote_Control_SIX :
+							 z = KEYBOARD_SIX;
+							 MODE = KEYBOARD;
+							 break;		
+		case Remote_Control_SEVEN : 
+							 z = KEYBOARD_SEVEN;
+							 MODE = KEYBOARD;
+						 	 break;		
+		case Remote_Control_EIGHT : 
+							 z = KEYBOARD_EIGHT;
+							 MODE = KEYBOARD;	
+							 break;		
+		case Remote_Control_NINE : 
+							 z = KEYBOARD_NINE;
+							 MODE = KEYBOARD;
+							 break;	
+		case Remote_Control_ZERO : 
+							 z = KEYBOARD_ZERO;
+							 MODE = KEYBOARD;
+							 break;		
+		case Remote_Control_PAGE_UP : 
+							 z = PAGE_UP;
+							 MODE = KEYBOARD;
+							 break;		
+		case Remote_Control_PAGE_DOWN : 
+							 z = PAGE_DOWN;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_ONE : 
+							 z = F_ONE;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_TWO : 
+							 z = F_TWO;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_THREE : 
+						   z = F_THREE;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_FOUR : 
+							 z = F_FOUR;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_FIVE: 	
+							 z = F_FIVE;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_SIX : 
+							 z = F_SIX;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_SEVEN : 
+							 z = F_SEVEN;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_EIGHT : 
+							 z = F_EIGHT;
+							 MODE = KEYBOARD;
+							 break;					
+		case Remote_Control_F_NINE : 
+							 z = F_NINE;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_TEN : 
+							 z = F_TEN;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_ELEVEN :
+							 z = F_ELEVEN;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_F_TWELVE : 
+							 z = F_TWELVE;
+							 MODE = KEYBOARD;
+							 break;
+		case Remote_Control_ARROW_UP ://right
+							z = UP_ARROW ;	
+							MODE = KEYBOARD;
+              break;
+		case Remote_Control_ARROW_DOWN :	//right
+							z = DOWN_ARROW;
+						  MODE = KEYBOARD;
+							break;					
+		case Remote_Control_ARROW_LEFT : //right
+							z = LEFT_ARROW;
+							MODE = KEYBOARD;
+							break;
+		case Remote_Control_ARROW_RIGHT : //right
+							z = RIGHT_ARROW;
+							MODE = KEYBOARD;
+							break;
+		case Remote_Control_ENTER : 
+							z = ENTER;
+							MODE = KEYBOARD;
+							break;
+		case Remote_Control_BACKSPACE : 
+							z = BACKSPACE;
+						  MODE = KEYBOARD;
+							break;
+		case Remote_Control_SPACEBAR : 
+							z = SPACEBAR;
+							MODE = KEYBOARD;
+							break;
+		case Remote_Control_LEFT_GUI : 
+							x = LEFT_GUI;
+							MODE = KEYBOARD;
+							break;
+		case Remote_Control_ALT_PLUS_TAB : 
+							x = LEFT_ALT;
+							z = TAB;
+							MODE = KEYBOARD;
+							break;
+		case Remote_Control_ALT_PLUS_F_FOUR : 
+							x = LEFT_ALT;
+							z = F_FOUR;
+							MODE = KEYBOARD;
+							break;
+		default: break;
+	}
+	Hid_Buffer[0] = MODE;
+  Hid_Buffer[1] = x;
+  Hid_Buffer[2] = y;
+  Hid_Buffer[3] = z;
+  Hid_Buffer[4] = k;
+  
+  return Hid_Buffer;
 }
+
+void InfraredControl(void)
+{
+			uint8_t *Buf ;
+			Buf = Package(GetInfraredKey());  //键值打包
+			USBD_HID_SendReport (&hUsbDeviceFS, Buf , 9);	
+}
+
+
