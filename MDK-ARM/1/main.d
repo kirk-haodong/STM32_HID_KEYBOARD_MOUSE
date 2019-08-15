@@ -25,8 +25,6 @@
 1\main.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_flash_ex.h
 1\main.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_pwr.h
 1\main.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_pwr_ex.h
-1\main.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_tim.h
-1\main.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_tim_ex.h
 1\main.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_pcd.h
 1\main.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_ll_usb.h
 1\main.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_pcd_ex.h
@@ -35,7 +33,7 @@
 1\main.o: ../Inc/usbd_conf.h
 1\main.o: D:\tool\keil\ARM\ARMCC\Bin\..\include\stdlib.h
 1\main.o: D:\tool\keil\ARM\ARMCC\Bin\..\include\string.h
-1\main.o: ../Inc/app.h
+1\main.o: ../Inc/appkeyboard.h
 1\main.o: ../Middlewares/ST/STM32_USB_Device_Library/Class/HID/Inc/usbd_hid.h
 1\main.o: ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h
 1\main.o: ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h

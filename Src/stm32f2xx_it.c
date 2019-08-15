@@ -57,9 +57,6 @@
 
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
-extern TIM_HandleTypeDef htim2;
-extern TIM_HandleTypeDef htim3;
-extern TIM_HandleTypeDef htim9;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -201,45 +198,44 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles TIM1 break interrupt and TIM9 global interrupt.
+  * @brief This function handles PVD interrupt through EXTI line16.
   */
-void TIM1_BRK_TIM9_IRQHandler(void)
+void PVD_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 0 */
+  /* USER CODE BEGIN PVD_IRQn 0 */
 
-  /* USER CODE END TIM1_BRK_TIM9_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim9);
-  /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 1 */
+  /* USER CODE END PVD_IRQn 0 */
+  HAL_PWR_PVD_IRQHandler();
+  /* USER CODE BEGIN PVD_IRQn 1 */
 
-  /* USER CODE END TIM1_BRK_TIM9_IRQn 1 */
+  /* USER CODE END PVD_IRQn 1 */
 }
 
 /**
-  * @brief This function handles TIM2 global interrupt.
+  * @brief This function handles Flash global interrupt.
   */
-void TIM2_IRQHandler(void)
+void FLASH_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM2_IRQn 0 */
+  /* USER CODE BEGIN FLASH_IRQn 0 */
 
-  /* USER CODE END TIM2_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim2);
-  /* USER CODE BEGIN TIM2_IRQn 1 */
+  /* USER CODE END FLASH_IRQn 0 */
+  HAL_FLASH_IRQHandler();
+  /* USER CODE BEGIN FLASH_IRQn 1 */
 
-  /* USER CODE END TIM2_IRQn 1 */
+  /* USER CODE END FLASH_IRQn 1 */
 }
 
 /**
-  * @brief This function handles TIM3 global interrupt.
+  * @brief This function handles RCC global interrupt.
   */
-void TIM3_IRQHandler(void)
+void RCC_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM3_IRQn 0 */
+  /* USER CODE BEGIN RCC_IRQn 0 */
 
-  /* USER CODE END TIM3_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim3);
-  /* USER CODE BEGIN TIM3_IRQn 1 */
+  /* USER CODE END RCC_IRQn 0 */
+  /* USER CODE BEGIN RCC_IRQn 1 */
 
-  /* USER CODE END TIM3_IRQn 1 */
+  /* USER CODE END RCC_IRQn 1 */
 }
 
 /**

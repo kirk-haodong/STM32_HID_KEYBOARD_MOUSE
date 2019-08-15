@@ -1,3 +1,4 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -8,49 +9,56 @@
   * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
-  * 此程序功能为摇杆控制鼠标，三个按键从第一到第三分别是B、TAB、ALT按键
-	* 用户若需要定制按键功能请跳转app.c
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
   *
   ******************************************************************************
   */
-	
+/* USER CODE END Header */
+
+/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usb_device.h"
-#include "app.h"
+#include "appkeyboard.h"
+//#include "appmouse.h"
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 
-#define	RangJudge(val,min,max)   (val>min? (val<max? 1 : 0) : 0)
-#define LOOSE 						0
-#define	PRESS 						1
-#define SEND_KEYBOARD 		2
-#define INFRARED_CONTROL  3
+/* USER CODE END Includes */
 
-typedef struct T9_Infrared
-{
-  uint32_t  KEY_VALUE;   
-	uint16_t  TriTime[2];  
-	uint8_t   DataBit;
-	uint8_t   FrameStart;
-  uint8_t   KEY_Count;	
-	uint8_t   TriPolarity;
-}T9_InfraredDev;
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
 
-TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim9;
+/* USER CODE END PTD */
 
-T9_InfraredDev  T9Infra_S, *T9Infra = &T9Infra_S;
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
 
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_TIM2_Init(void);
-static void MX_TIM3_Init(void);
-static void MX_TIM9_Init(void);
-uint8_t  GetInfraredKey(void);
+/* USER CODE BEGIN PFP */
+/* USER CODE END PFP */
 
-static int STATE = LOOSE;
-static uint8_t CountNum;
-uint8_t hid_Buffer [9]={0x01,0,0,0,0,0,0,0,0};
-static uint8_t countNum = 0;
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+int count = 1;
+/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -58,47 +66,69 @@ static uint8_t countNum = 0;
   */
 int main(void)
 {
+  /* USER CODE BEGIN 1 */
+	uint8_t i,j;
+  /* USER CODE END 1 */
+  
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
   SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_TIM2_Init();
-  MX_USB_DEVICE_Init();
-  MX_TIM3_Init();
-  MX_TIM9_Init();
-  HAL_TIM_Base_Start_IT(&htim2);
-	HAL_TIM_Base_Start_IT(&htim3);
-	HAL_TIM_IC_Start_IT(&htim9, TIM_CHANNEL_1);
-	
-	T9Infra->TriPolarity = 1;
-  T9Infra->FrameStart = 1;
-	T9Infra->TriTime[0] = 0;
-	T9Infra->TriTime[1] = 0;
-	
+	MX_USB_DEVICE_Init();
+  /* USER CODE BEGIN 2 */
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
   while (1)
   {
-		switch(STATE)
+    /* USER CODE END WHILE */
+		if(!HAL_GPIO_ReadPin (GPIOA,GPIO_PIN_0))
 		{
-			case LOOSE:
-					break;
-			case PRESS:
-					Control();
-					STATE = LOOSE;
-					break;
-			case SEND_KEYBOARD:
-					USBD_HID_SendReport (&hUsbDeviceFS, hid_Buffer,9);
-					STATE = LOOSE;
-					break;
-			case INFRARED_CONTROL:
-				  InfraredControl ();
-					STATE = LOOSE;
-					break;
-			default:
-					STATE = LOOSE;
-					break;
+		count ^= 1; 
+		USBD_DeInit(&hUsbDeviceFS);
+		MX_USB_DEVICE_Init();
 		}
+		if(count==0)
+			{
+				i = Key_ReadIOPin();
+				if(!i)
+					{
+						mouseControl();
+					}
+			}
+		else
+			{
+				j = keyScan();
+				if(!j)
+					keyboardControl();
+				HAL_Delay (100);
+			}
+    /* USER CODE BEGIN 3 */
   }
+  /* USER CODE END 3 */
 }
 
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -134,98 +164,19 @@ void SystemClock_Config(void)
   }
 }
 
-
-static void MX_TIM2_Init(void)
-{
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 50;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 9;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-
-static void MX_TIM3_Init(void)
-{
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 1600-1;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 250-1;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-
-static void MX_TIM9_Init(void)
-{
-  TIM_IC_InitTypeDef sConfigIC = {0};
-  htim9.Instance = TIM9;
-  htim9.Init.Prescaler = 32-1;
-  htim9.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim9.Init.Period = 10000-1;
-  htim9.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim9.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_IC_Init(&htim9) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
-  if (HAL_TIM_IC_ConfigChannel(&htim9, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+  /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PC0 PC1 PC2 PC3 
                            PC10 PC11 PC12 */
@@ -241,100 +192,16 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB5 PB6 PB7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
 }
 
+/* USER CODE BEGIN 4 */
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)//遥控捕获
-{
-	if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-	{
-		T9Infra->TriPolarity = !T9Infra->TriPolarity;
-		if(!T9Infra->TriPolarity)  //上升沿触发
-		{		
-			__HAL_TIM_SET_CAPTUREPOLARITY(&htim9, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
-			T9Infra->TriTime[T9Infra->TriPolarity] =  HAL_TIM_ReadCapturedValue(&htim9, TIM_CHANNEL_1);			
-		}
-		else  //下降沿触发
-		{
-			__HAL_TIM_SET_CAPTUREPOLARITY(&htim9, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
-       if(T9Infra->FrameStart == 1) 
-			{
-        T9Infra->TriTime[T9Infra->TriPolarity] = HAL_TIM_ReadCapturedValue(&htim9, TIM_CHANNEL_1);				
-			}					            
-		}	
-		TIM9->CNT = 0; 
-		
-  		if(RangJudge(T9Infra->TriTime[0],4000,5000) &&    RangJudge(T9Infra->TriTime[1],2000,3000) )   //同步码
-		{
-			 T9Infra->KEY_VALUE = 0;  
-			 T9Infra->KEY_Count = 0;  
-       T9Infra->DataBit = 0;  	
-		}		
-			else if(RangJudge(T9Infra->TriTime[0],4000,5000) && RangJudge(T9Infra->TriTime[1],7000,8000) ) 			//连发码
-		{
-			 T9Infra->KEY_Count = 1;
-		}
-	  /********************************* 接收数据 *********************************/		
-		if( T9Infra->TriPolarity == 1)
-		{
-      if(RangJudge(T9Infra->TriTime[0],200,300) && RangJudge(T9Infra->TriTime[1],200,300) )              //0
-			{			
-			   T9Infra->KEY_VALUE &= ~(1<T9Infra->DataBit++); 
-					countNum++;
-			}
-      else if(RangJudge(T9Infra->TriTime[0],200,300) && RangJudge(T9Infra->TriTime[1],800,900) ) 				//1
-			{
-			   T9Infra->KEY_VALUE |= 1 << T9Infra->DataBit++;
-				countNum++;
-			}
-		}	
-		if(countNum == 32||(T9Infra->KEY_Count == 1))
-		{
-			STATE = INFRARED_CONTROL;			//进入红外遥控
-			T9Infra->KEY_Count = 0;
-			countNum = 0;
-		}	
-	}
-}	
+/* USER CODE END 4 */
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)//按键防抖、按键检测、键盘空键值发送
-{ 
-	if(htim->Instance == TIM2)//按键防抖
-		{
-			if(!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_12 )  ||  (!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_11))  ||  \
-				(!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_10))  ||  (!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_0) )  ||  \
-				(!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_1) )  ||  (!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2) )  ||  \
-			  (!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_3)))
-				{
-					if(CountNum >2)
-					{
-						CountNum = 0;
-						STATE = PRESS;
-					}
-					else CountNum++;
-				}	
-		}
-		if(htim->Instance == TIM3) //键盘空按键发送
-		{
-			STATE = SEND_KEYBOARD;
-		}
-}
-
-uint8_t  GetInfraredKey(void)
-{
-   //通过与反码异或，验证按键码的正确性
-   if( (uint8_t)( (T9Infra->KEY_VALUE >> 24) ^ (T9Infra->KEY_VALUE >> 16) ) == 0xff  )
-   return (uint8_t)(T9Infra->KEY_VALUE>>16);
-	 
-   else  return 0;
-}
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */

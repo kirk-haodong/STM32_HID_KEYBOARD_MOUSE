@@ -24,8 +24,6 @@
 1\stm32f2xx_hal_pwr_ex.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_flash_ex.h
 1\stm32f2xx_hal_pwr_ex.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_pwr.h
 1\stm32f2xx_hal_pwr_ex.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_pwr_ex.h
-1\stm32f2xx_hal_pwr_ex.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_tim.h
-1\stm32f2xx_hal_pwr_ex.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_tim_ex.h
 1\stm32f2xx_hal_pwr_ex.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_pcd.h
 1\stm32f2xx_hal_pwr_ex.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_ll_usb.h
 1\stm32f2xx_hal_pwr_ex.o: ../Drivers/STM32F2xx_HAL_Driver/Inc/stm32f2xx_hal_pcd_ex.h

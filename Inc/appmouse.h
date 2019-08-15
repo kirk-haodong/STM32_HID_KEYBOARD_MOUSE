@@ -1,8 +1,6 @@
 #include "usbd_def.h"
 #include "usbd_hid.h"
 
-#define CURSOR_STEP 5
-
 #define JOY_A_KEY_Port					    GPIOC
 #define JOY_A_KEY_Pin				       	GPIO_PIN_3
 
@@ -15,9 +13,6 @@
 #define JOY_D_KEY_Port			     		GPIOC
 #define JOY_D_KEY_Pin					      GPIO_PIN_0
 
-#define JOY_PRESS_Port							GPIOA
-#define JOY_PRESS_Pin								GPIO_PIN_0
-
 #define KEY1                        GPIOC
 #define KEY1_Pin										GPIO_PIN_12
 
@@ -28,6 +23,7 @@ typedef enum
 { 
   JOY_NONE = 0,
 	JOY_LEFT_CLICK = 1,
+	JOY_RIGHT_CLICK = 6,
   JOY_DOWN = 2,
   JOY_LEFT = 3,
   JOY_RIGHT = 4,
